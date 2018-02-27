@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"fmt"
+	models "github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/tsdb"
 	"regexp"
 	"strings"
+	"structs"
 	"time"
-
-	"github.com/grafana/grafana/pkg/tsdb"
 )
 
 //const rsString = `(?:"([^"]*)")`;
@@ -99,6 +100,16 @@ func (m *PostgresMacroEngine) evaluateMacro(name string, args []string) (string,
 		return fmt.Sprintf("%d", uint64(m.TimeRange.GetFromAsMsEpoch()/1000)), nil
 	case "__unixEpochTo":
 		return fmt.Sprintf("%d", uint64(m.TimeRange.GetToAsMsEpoch()/1000)), nil
+	case "__userData":
+		if len(args) != 0 {
+			if args[0] == "UserId" {
+				return fmt.Sprintf("%d", &models.SignedInUser{}.UserId), nil
+			}
+			if args[0] == "Login" {
+				return fmt.Sprintf("%s", &models.SignedInUser{}.Login), nil
+			}
+		}
+		return fmt.Sprintf("%s", &models.SignedInUser{}.Email), nil
 	default:
 		return "", fmt.Errorf("Unknown macro %v", name)
 	}
