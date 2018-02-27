@@ -25,7 +25,7 @@ type SqlEngine interface {
 // SqlMacroEngine interpolates macros into sql. It takes in the timeRange to be able to
 // generate queries that use from and to.
 type SqlMacroEngine interface {
-	Interpolate(timeRange *TimeRange, sql string) (string, error)
+	Interpolate(timeRange *TimeRange, sql string, user *models.SignedInUser) (string, error)
 }
 
 type DefaultSqlEngine struct {
@@ -97,7 +97,7 @@ func (e *DefaultSqlEngine) Query(
 		queryResult := &QueryResult{Meta: simplejson.New(), RefId: query.RefId}
 		result.Results[query.RefId] = queryResult
 
-		rawSql, err := e.MacroEngine.Interpolate(tsdbQuery.TimeRange, rawSql)
+		rawSql, err := e.MacroEngine.Interpolate(tsdbQuery.TimeRange, rawSql, tsdbQuery.SignedInUser)
 		if err != nil {
 			queryResult.Error = err
 			continue

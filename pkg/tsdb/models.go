@@ -7,8 +7,9 @@ import (
 )
 
 type TsdbQuery struct {
-	TimeRange *TimeRange
-	Queries   []*Query
+	TimeRange    *TimeRange
+	Queries      []*Query
+	SignedInUser *models.SignedInUser
 }
 
 type Query struct {

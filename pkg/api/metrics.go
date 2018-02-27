@@ -31,7 +31,7 @@ func QueryMetrics(c *middleware.Context, reqDto dtos.MetricRequest) Response {
 		return ApiError(500, "failed to fetch data source", err)
 	}
 
-	request := &tsdb.TsdbQuery{TimeRange: timeRange}
+	request := &tsdb.TsdbQuery{TimeRange: timeRange, SignedInUser: c.SignedInUser}
 
 	for _, query := range reqDto.Queries {
 		request.Queries = append(request.Queries, &tsdb.Query{

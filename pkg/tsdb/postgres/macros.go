@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"fmt"
-	models "github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/tsdb"
 	"regexp"
 	"strings"
@@ -21,13 +21,13 @@ func NewPostgresMacroEngine() tsdb.SqlMacroEngine {
 	return &PostgresMacroEngine{}
 }
 
-func (m *PostgresMacroEngine) Interpolate(timeRange *tsdb.TimeRange, sql string) (string, error) {
+func (m *PostgresMacroEngine) Interpolate(timeRange *tsdb.TimeRange, sql string, user *models.SignedInUser) (string, error) {
 	m.TimeRange = timeRange
 	rExp, _ := regexp.Compile(sExpr)
 	var macroError error
 
 	sql = replaceAllStringSubmatchFunc(rExp, sql, func(groups []string) string {
-		res, err := m.evaluateMacro(groups[1], strings.Split(groups[2], ","))
+		res, err := m.evaluateMacro(groups[1], strings.Split(groups[2], ","), user)
 		if err != nil && macroError == nil {
 			macroError = err
 			return "macro_error()"
@@ -59,7 +59,7 @@ func replaceAllStringSubmatchFunc(re *regexp.Regexp, str string, repl func([]str
 	return result + str[lastIndex:]
 }
 
-func (m *PostgresMacroEngine) evaluateMacro(name string, args []string) (string, error) {
+func (m *PostgresMacroEngine) evaluateMacro(name string, args []string, user *models.SignedInUser) (string, error) {
 	switch name {
 	case "__time":
 		if len(args) == 0 {
@@ -101,14 +101,15 @@ func (m *PostgresMacroEngine) evaluateMacro(name string, args []string) (string,
 		return fmt.Sprintf("%d", uint64(m.TimeRange.GetToAsMsEpoch()/1000)), nil
 	case "__userData":
 		if len(args) != 0 {
-			if args[0] == "UserId" {
-				return fmt.Sprintf("%d", &models.SignedInUser{}.UserId), nil
+			var arg0 = args[0]
+			if strings.Contains(arg0, "UserId") {
+				return fmt.Sprintf("%d", user.UserId), nil
 			}
-			if args[0] == "Login" {
-				return fmt.Sprintf("%s", &models.SignedInUser{}.Login), nil
+			if strings.Contains(arg0, "Login") {
+				return fmt.Sprintf("%s", user.Login), nil
 			}
 		}
-		return fmt.Sprintf("%s", &models.SignedInUser{}.Email), nil
+		return fmt.Sprintf("%s", user.Email), nil
 	default:
 		return "", fmt.Errorf("Unknown macro %v", name)
 	}
