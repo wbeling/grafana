@@ -6,7 +6,6 @@ import (
 	"github.com/grafana/grafana/pkg/tsdb"
 	"regexp"
 	"strings"
-	"structs"
 	"time"
 )
 
